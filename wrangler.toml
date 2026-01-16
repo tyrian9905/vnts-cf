@@ -40,7 +40,7 @@ CACHE_SAVE_INTERVAL = "3600"
 LOG_LEVEL = "info"
 
 # 日志存储密码，不为空时启用日志存储功能 /log ，开启后会消耗durable_objects免费额度，谨慎开启  
-LOG_PASSWORD = "Bh@0779536000"
+LOG_PASSWORD = ""
   
 [[durable_objects.bindings]]
 # Durable Objects 绑定配置
