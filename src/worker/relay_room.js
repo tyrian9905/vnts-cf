@@ -2955,6 +2955,34 @@ export class RelayRoom {
   // 快速转发路径
   async fastForward(clientId, data) {
     // logger.info(`开始快速转发数据包，来源客户端: ${clientId}`);
+    
+    // 递减 TTL（修复"丢弃过时包"问题）
+    try {
+      const uint8Data = data instanceof Uint8Array ? data : new Uint8Array(data);
+
+      // 检查数据包长度
+      if (uint8Data.length >= 4) {
+        const ttlByte = uint8Data[3];
+        const currentTtl = ttlByte & 0x0F;  // 获取低4位（当前TTL）
+
+        // 只有当 TTL > 0 时才转发
+        if (currentTtl > 0) {
+          const newTtl = currentTtl - 1;
+          // 保留高4位（source_ttl），只修改低4位（ttl）
+          uint8Data[3] = (ttlByte & 0xF0) | (newTtl & 0x0F);
+
+          // 使用修改后的数据进行转发
+          data = uint8Data;
+        } else {
+          // TTL 已经为 0，不转发
+          // logger.debug(`TTL为0，丢弃数据包，来源客户端: ${clientId}`);
+          return;
+        }
+      }
+    } catch (error) {
+      logger.error(`快速转发TTL处理失败:`, error);
+      // 如果TTL处理失败，仍然尝试转发原始数据
+    }
 
     let forwardedCount = 0;
     for (const [targetClientId, server] of this.connections) {
@@ -3076,6 +3104,12 @@ export class RelayRoom {
 
     if (packet.protocol === PROTOCOL.ERROR) {
       // logger.debug(`ERROR协议，不广播`);
+      return false;
+    }
+    
+    // CONTROL协议由服务器直接处理，不广播
+    if (packet.protocol === PROTOCOL.CONTROL) {
+      // logger.debug(`CONTROL协议，不广播`);
       return false;
     }
 

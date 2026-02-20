@@ -41,6 +41,9 @@ LOG_LEVEL = "info"
 
 # 日志存储密码，不为空时启用日志存储功能 /log ，开启后会消耗durable_objects免费额度，谨慎开启  
 LOG_PASSWORD = ""
+
+# Durable Object 地理位置提示，优化延迟（apac=亚太 weur=西欧 enam=北美东部 wnam=北美西部等）
+LOCATION_HINT = "apac"
   
 [[durable_objects.bindings]]
 # Durable Objects 绑定配置

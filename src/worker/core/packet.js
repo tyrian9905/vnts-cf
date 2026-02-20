@@ -165,18 +165,9 @@ export class NetPacket {
   incr_ttl() {
     // 安全检查：确保数据存在
     if (!this.data) {
-      // logger.error(`[TTL递增-错误] 数据包数据为空`);
-      throw new Error("Cannot increment TTL: packet data is null");
+      // logger.error(`[TTL递减-错误] 数据包数据为空`);
+      throw new Error("Cannot decrement TTL: packet data is null");
     }
-
-    // 确保 TTL 值有效
-    if (typeof this.ttl !== "number" || this.ttl < 0) {
-      // logger.error(`[TTL递增-错误] TTL值无效: ${this.ttl}`);
-      throw new Error("Invalid TTL value");
-    }
-
-    // 增加 TTL
-    this.ttl++;
 
     // 确保有有效的 ArrayBuffer
     let buffer;
@@ -188,23 +179,33 @@ export class NetPacket {
     } else if (this.data instanceof ArrayBuffer) {
       buffer = this.data;
     } else {
-      // logger.error(`[TTL递增-错误] 无效的数据类型`);
+      // logger.error(`[TTL递减-错误] 无效的数据类型`);
       throw new Error("Invalid data type for packet modification");
     }
 
     // 安全检查：确保缓冲区足够大
     if (buffer.byteLength < 4) {
-      // logger.error(`[TTL递增-错误] 缓冲区太短，无法修改TTL`);
+      // logger.error(`[TTL递减-错误] 缓冲区太短，无法修改TTL`);
       throw new Error("Packet too short to modify TTL");
     }
 
     try {
       const view = new DataView(buffer);
-      view.setUint8(3, this.ttl); // TTL 在字节3
-      return this.ttl;
+      const ttlByte = view.getUint8(3);
+      const currentTtl = ttlByte & 0x0F;  // 获取低4位（当前TTL）
+      const newTtl = currentTtl - 1;      // 递减TTL（注意：虽然方法名是incr，但实际是递减）
+
+      // 保留高4位（source_ttl），只修改低4位（ttl）
+      const MAX_SOURCE = 0xF0;  // 0b11110000
+      const MAX_TTL = 0x0F;     // 0b00001111
+      const newValue = (ttlByte & MAX_SOURCE) | (newTtl & MAX_TTL);
+      view.setUint8(3, newValue);
+
+      this.ttl = newTtl;
+      return newTtl;
     } catch (error) {
-      // logger.error(`[TTL递增-失败] 写入TTL失败: ${error.message}`, error);
-      throw new Error(`Failed to increment TTL: ${error.message}`);
+      // logger.error(`[TTL递减-失败] 写入TTL失败: ${error.message}`, error);
+      throw new Error(`Failed to decrement TTL: ${error.message}`);
     }
   }
 

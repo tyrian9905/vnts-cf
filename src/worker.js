@@ -12,6 +12,9 @@ export default {
     }
     const url = new URL(request.url);
     const { pathname, searchParams } = url;
+    
+    // Durable Object 地理位置提示配置
+    const options = env.LOCATION_HINT ? { locationHint: env.LOCATION_HINT } : {};
 
     const wsPath = "/" + env.WS_PATH || "/vnt";
     if (pathname === wsPath || pathname === wsPath + "/") {
@@ -20,21 +23,21 @@ export default {
       }
 
       const roomId = searchParams.get("room") || "default";
-      const roomStub = env.RELAY_ROOM.get(env.RELAY_ROOM.idFromName(roomId));
+      const roomStub = env.RELAY_ROOM.get(env.RELAY_ROOM.idFromName(roomId), options);
       return roomStub.fetch(request);
     }
 
     // 健康检查转发到 RelayRoom
     if (pathname === "/test") {
       const roomId = searchParams.get("room") || "default";
-      const roomStub = env.RELAY_ROOM.get(env.RELAY_ROOM.idFromName(roomId));
+      const roomStub = env.RELAY_ROOM.get(env.RELAY_ROOM.idFromName(roomId), options);
       return roomStub.fetch(request);
     }
 
     // 添加设备列表查询端点
     if (pathname === "/room") {
       const roomId = searchParams.get("room") || "default";
-      const roomStub = env.RELAY_ROOM.get(env.RELAY_ROOM.idFromName(roomId));
+      const roomStub = env.RELAY_ROOM.get(env.RELAY_ROOM.idFromName(roomId), options);
       return roomStub.fetch(request);
     }
 
@@ -45,7 +48,7 @@ export default {
         return new Response("Not found", { status: 404 });  
       }
       const roomId = searchParams.get("room") || "default";
-      const roomStub = env.RELAY_ROOM.get(env.RELAY_ROOM.idFromName(roomId));
+      const roomStub = env.RELAY_ROOM.get(env.RELAY_ROOM.idFromName(roomId), options);
       return roomStub.fetch(request);
     }
 
